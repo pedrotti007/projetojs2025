@@ -208,6 +208,38 @@
             }
         }
 
+        // Função para obter mensagens excluídas do localStorage
+        function obterMensagensExcluidas() {
+            var excluidas = localStorage.getItem('mensagensExcluidas');
+            if (excluidas) {
+                return JSON.parse(excluidas);
+            }
+            return [];
+        }
+
+        // Função para salvar mensagens excluídas no localStorage
+        function salvarMensagensExcluidas(excluidas) {
+            localStorage.setItem('mensagensExcluidas', JSON.stringify(excluidas));
+        }
+
+        // Função para verificar se uma mensagem foi excluída
+        function foiExcluida(mensagem) {
+            var excluidas = obterMensagensExcluidas();
+            var id = mensagem.nome + '|' + mensagem.email + '|' + mensagem.mensagem;
+            return excluidas.indexOf(id) !== -1;
+        }
+
+        // Função para marcar mensagem como excluída
+        function marcarComoExcluida(mensagem) {
+            var excluidas = obterMensagensExcluidas();
+            var id = mensagem.nome + '|' + mensagem.email + '|' + mensagem.mensagem;
+
+            if (excluidas.indexOf(id) === -1) {
+                excluidas.push(id);
+                salvarMensagensExcluidas(excluidas);
+            }
+        }
+
         // Função para renderizar a tabela de mensagens
         function renderizarMensagens() {
             var corpoTabela = $('#corpoTabela');
@@ -260,6 +292,9 @@
             if (confirm('Tem certeza que deseja excluir esta mensagem?')) {
                 var mensagem = todasMensagens[index];
 
+                // Marcar como excluída no localStorage para persistir
+                marcarComoExcluida(mensagem);
+
                 // Remover das visualizadas se estiver lá
                 removerDasVisualizadas(mensagem);
 
@@ -277,7 +312,10 @@
                 var mensagens = obterMensagens();
 
                 if (mensagens && mensagens.length > 0) {
-                    todasMensagens = mensagens;
+                    // Filtrar mensagens excluídas antes de exibir
+                    todasMensagens = mensagens.filter(function (mensagem) {
+                        return !foiExcluida(mensagem);
+                    });
                     renderizarMensagens();
                 } else {
                     todasMensagens = [];
