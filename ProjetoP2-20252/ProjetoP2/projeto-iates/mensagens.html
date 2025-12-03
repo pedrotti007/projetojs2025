@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luxo - Mensagens Recebidas</title>
+    <link rel="shortcut icon" href="images/barco2.png" type="image/x-icon" />
+    <link rel="stylesheet" href="css/default.css" />
+    <script src="js/jquery-3.6.4.min.js"></script>
+    <script src="js/api.js"></script>
+    <style>
+        /* Estilos específicos para a tabela de mensagens */
+        .table-container {
+            margin: 20px auto;
+            max-width: 1200px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .nao-visualizada {
+            font-weight: bold;
+        }
+
+        .visualizada {
+            font-weight: normal;
+        }
+
+        .btn-acao {
+            padding: 6px 12px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-visualizar {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-visualizar:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-excluir {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn-excluir:hover {
+            background-color: #c0392b;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn-sair {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #95a5a6;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .btn-sair:hover {
+            background-color: #7f8c8d;
+        }
+
+        .sem-mensagens {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <header>
+            <div id="title">
+                <img src="images/barco1.png" alt="ícone de barco" />
+                <div class="headtitle">
+                    <h1>Luxo</h1>
+                    <h2>Aluguel de iates</h2>
+                </div>
+            </div>
+
+            <nav>
+                <ul class="navmenu">
+                    <li><a href="index.html">Página inicial</a></li>
+                    <li><a href="aluguel.html">Aluguel de iates</a></li>
+                    <li><a href="destinos.html">Destinos</a></li>
+                    <li><a href="tripulacao.html">Tripulação</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <div class="pagtitle">
+                <div class="bgtitle"></div>
+                <h2>Mensagens Recebidas</h2>
+            </div>
+
+            <div class="admin-header">
+                <a href="admin.html" class="btn-sair">Sair</a>
+            </div>
+
+            <div class="table-container">
+                <table id="tabelaMensagens">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>E-mail</th>
+                            <th>Mensagem</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabela">
+                        <!-- Mensagens serão inseridas aqui dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <p>© 2023 por Luxo aluguel de iates</p>
+    </footer>
+
+    <script>
+        // Variável global para armazenar as mensagens
+        var todasMensagens = [];
+
+        // Função para obter mensagens visualizadas do localStorage
+        function obterMensagensVisualizadas() {
+            var visualizadas = localStorage.getItem('mensagensVisualizadas');
+            if (visualizadas) {
+                return JSON.parse(visualizadas);
+            }
+            return [];
+        }
+
+        // Função para salvar mensagens visualizadas no localStorage
+        function salvarMensagensVisualizadas(visualizadas) {
+            localStorage.setItem('mensagensVisualizadas', JSON.stringify(visualizadas));
+        }
+
+        // Função para verificar se uma mensagem foi visualizada
+        function foiVisualizada(mensagem) {
+            var visualizadas = obterMensagensVisualizadas();
+            // Criar identificador único baseado nos dados da mensagem
+            var id = mensagem.nome + '|' + mensagem.email + '|' + mensagem.mensagem;
+            return visualizadas.indexOf(id) !== -1;
+        }
+
+        // Função para marcar mensagem como visualizada
+        function marcarComoVisualizada(mensagem) {
+            var visualizadas = obterMensagensVisualizadas();
+            var id = mensagem.nome + '|' + mensagem.email + '|' + mensagem.mensagem;
+
+            if (visualizadas.indexOf(id) === -1) {
+                visualizadas.push(id);
+                salvarMensagensVisualizadas(visualizadas);
+            }
+        }
+
+        // Função para remover mensagem das visualizadas
+        function removerDasVisualizadas(mensagem) {
+            var visualizadas = obterMensagensVisualizadas();
+            var id = mensagem.nome + '|' + mensagem.email + '|' + mensagem.mensagem;
+            var index = visualizadas.indexOf(id);
+
+            if (index !== -1) {
+                visualizadas.splice(index, 1);
+                salvarMensagensVisualizadas(visualizadas);
+            }
+        }
+
+        // Função para renderizar a tabela de mensagens
+        function renderizarMensagens() {
+            var corpoTabela = $('#corpoTabela');
+            corpoTabela.empty();
+
+            if (todasMensagens.length === 0) {
+                corpoTabela.append(
+                    '<tr><td colspan="4" class="sem-mensagens">Nenhuma mensagem recebida</td></tr>'
+                );
+                return;
+            }
+
+            todasMensagens.forEach(function (mensagem, index) {
+                var visualizada = foiVisualizada(mensagem);
+                var classeVisualizada = visualizada ? 'visualizada' : 'nao-visualizada';
+
+                var linha = '<tr class="' + classeVisualizada + '" data-index="' + index + '">' +
+                    '<td>' + mensagem.nome + '</td>' +
+                    '<td>' + mensagem.email + '</td>' +
+                    '<td>' + mensagem.mensagem + '</td>' +
+                    '<td>' +
+                    '<button class="btn-acao btn-visualizar" onclick="marcarVisualizada(' + index + ')">' +
+                    (visualizada ? 'Visualizada' : 'Marcar como Visualizada') +
+                    '</button>' +
+                    '<button class="btn-acao btn-excluir" onclick="excluirMensagem(' + index + ')">Excluir</button>' +
+                    '</td>' +
+                    '</tr>';
+
+                corpoTabela.append(linha);
+            });
+        }
+
+        // Função para marcar mensagem como visualizada (com confirmação)
+        function marcarVisualizada(index) {
+            var mensagem = todasMensagens[index];
+
+            if (foiVisualizada(mensagem)) {
+                alert('Esta mensagem já foi marcada como visualizada.');
+                return;
+            }
+
+            if (confirm('Deseja marcar esta mensagem como visualizada?')) {
+                marcarComoVisualizada(mensagem);
+                renderizarMensagens();
+            }
+        }
+
+        // Função para excluir mensagem (com confirmação)
+        function excluirMensagem(index) {
+            if (confirm('Tem certeza que deseja excluir esta mensagem?')) {
+                var mensagem = todasMensagens[index];
+
+                // Remover das visualizadas se estiver lá
+                removerDasVisualizadas(mensagem);
+
+                // Remover da lista de mensagens
+                todasMensagens.splice(index, 1);
+
+                // Renderizar novamente
+                renderizarMensagens();
+            }
+        }
+
+        // Função para carregar mensagens da API
+        function carregarMensagens() {
+            try {
+                var mensagens = obterMensagens();
+
+                if (mensagens && mensagens.length > 0) {
+                    todasMensagens = mensagens;
+                    renderizarMensagens();
+                } else {
+                    todasMensagens = [];
+                    renderizarMensagens();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar mensagens:', error);
+                alert('Erro ao carregar mensagens. Tente novamente.');
+            }
+        }
+
+        // Inicializar quando a página carregar
+        $(document).ready(function () {
+            carregarMensagens();
+
+            // Atualizar mensagens a cada 30 segundos
+            setInterval(carregarMensagens, 30000);
+        });
+    </script>
+</body>
+
+</html>
